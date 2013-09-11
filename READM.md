@@ -1,1 +1,0 @@
-About jQuery source code
