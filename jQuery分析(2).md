@@ -103,7 +103,35 @@ function( selector, context, rootjQuery ) {
 3. 当`selector`为DOMElement时，就将`context`置为当前选择的元素,`length`置为1,比如使用`$(document.getElementById('#id'))`。
 4. 当`selector`是一个函数时,就把`selector`加入`rootjQuery.ready()`中，这里的`rootQuery`(看源码的第886行)就是`$(document)`,所以使用`$(function(){})`和`$(doucument).ready(function(){})`效果一样。
 
-就第二种情况单独拿出来分析，`$('<div>hello,world</div>')`,`$('#id .class')`,`$('div .class')`都会使`typeof selector === string`。首先判断`selector`是不是HTML字符串(形如< >)，如果不是就分别处理，这个可以直接看注释。
+就第二种情况单独拿出来分析，`$('<div>hello,world</div>')`,`$('#id .class')`,`$('div .class')`都会使`typeof selector === string`。首先判断`selector`是不是HTML字符串(形如< >)，如果不是则执行`rquickExpr`正则表达式，看`selector`是否是HTML字符串或者#id，如果是其它(比如`.class`或者`#id span`)，则判断`context`是否传入，如果没有，则使用`rootQuery.find( selector )`，还记得`rootQuery`是什么吧，对，是`$(document)`，在源码的第5141行我们可以看到find函数的定义
+```js
+find: function( selector ) {
+	var i,
+		ret = [],
+		self = this,
+		len = self.length;
+
+	if ( typeof selector !== "string" ) {
+		return this.pushStack( jQuery( selector ).filter(function() {
+			for ( i = 0; i < len; i++ ) {
+				if ( jQuery.contains( self[ i ], this ) ) {
+					return true;
+				}
+			}
+		}) );
+	}
+
+	for ( i = 0; i < len; i++ ) {
+		jQuery.find( selector, self[ i ], ret );
+	}
+
+	// Needed because $( selector, context ) becomes $( context ).find( selector )
+	ret = this.pushStack( len > 1 ? jQuery.unique( ret ) : ret );
+	ret.selector = this.selector ? this.selector + " " + selector : selector;
+	return ret;
+}
+```
+可以看到这里其实用了`jQuery.find()`，再看源码第2836行`jQuery.find = Sizzle;`，Sizzle就是一个CSS选择器引擎，它一个开源公共的库，在dojo和其它许多地方也有使用。关于Sizzle我了解得不多，但是CSS3中提供了两个强大的选择方法`querySelector`和`querySelectorAll`，Sizzle中也对浏览器做了判断，所以我们应该尽可能使用这两个方法。
 
 
 
