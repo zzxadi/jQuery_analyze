@@ -1,6 +1,6 @@
 ## jQuery分析(4)
 
-前面有很多地方用到了工具函数，比如`jQuery.type()`,`jQuery.isFunction()`等等，下面我们挑几个讲讲。
+前面有很多地方用到了工具函数，比如`jQuery.type()`,`jQuery.isFunction()`等，下面我们挑几个讲讲。
 
 首先最关键的就是无处不在的判断类型，在jQuery中是怎样实现的呢？
 ```js
