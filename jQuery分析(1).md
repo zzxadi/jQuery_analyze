@@ -22,6 +22,94 @@ jQuery = function( selector, context ) {
 ```
 这说明什么，这说明jQuery对象是通过`jQuery.fn.init`方法来构造的,其中传入了两个形参(`selector`和`context`)。
 
+那jQuery为什么要这样构造呢？先看看我们最平常的方式(模仿jQuery)
+```js
+var jQuery = function( selector, context ) {
+   //构造函数 
+}
+
+jQuery.prototype.name = function() {
+
+}
+
+jQuery.prototype.age = 24;
+
+var jQueryObj = new jQuery();
+jQueryObj.name();
+```
+很明显我们并没有先new一个jQuery对象，然后再使用，而是类似这样使用的(`jQuery().html()`等价于`$().html()`)，要弄成这样的，`jQuery()`必须是一个类的实例，这样才能拥有属性和方法，所以改进后可能是这样的
+```js
+var jQuery = function( selector, context ) {
+   //构造函数 
+   return new jQuery();
+}
+
+jQuery.prototype.name = function() {
+
+}
+
+jQuery.prototype.age = 24;
+
+var jQueryObj = jQuery();
+jQueryObj.name();
+```
+但这很明显会出错，是一个死循环。
+
+那么利用它的原型，这种方式呢？
+```js
+var jQuery = function(selector, context) {
+    return jQuery.fn.init();
+}
+
+jQuery.fn = jQuery.prototype = {
+    init:function(){
+        return this;
+    },
+    name:function(){},
+    age:24
+}
+
+var jQueryObj = jQuery();
+jQueryObj.name();
+```
+这有一个问题，不知有没有看出来，就是这里所有对象的this都是jQuery实例，属性和方法是共享的，修改其中一个，其它的都会发生修改。所以为每个对象分配一个空间，不能共享属性和方法。于是就有了
+```js
+var jQuery = function(selector, context) {
+    return  new jQuery.fn.init();
+}
+
+jQuery.fn = jQuery.prototype = {
+    init:function(){
+        return this;
+    },
+    name:function(){},
+    age:24
+}
+
+var jQueryObj = jQuery();
+jQueryObj.name();
+```
+很明显这个会抛错，因为对象根本没有name方法和age属性，于是我们又修改了一下
+```js
+var jQuery = function(selector, context) {
+    return  new jQuery.fn.init();
+}
+
+jQuery.fn = jQuery.prototype = {
+    init:function(){
+        return this;
+    },
+    name:function(){},
+    age:24
+}
+
+jQuery.fn.init.prototype = jQuery.prototype;
+
+var jQueryObj = jQuery();
+jQueryObj.name();
+```
+这样就完美了，既不会抛错，又不会对象之间相互影响，可以看到jQuery就是这样实现的。
+
 再看在jQuery源码中最后几行
 ```js
 if ( typeof window === "object" && typeof window.document === "object" ) {
@@ -29,17 +117,4 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 }
 ```
 这说明如果`window`和`window.document`是对象，则在window上定义`jQuery`和`$`属性，这两个属性和这个函数中的`jQuery`是相等的。所以我们在使用`jQuery`时，`$('#id')`与`jQuery('#id')`是等价的。而且我们使用$()可以接受两个参数，一个就是平常接受的选择器，另一个就是这个选择器的作用环境。
-
-我们看`jQuery.fn.init`又是如何定义的，看第96行
-```js
-jQuery.fn = jQuery.prototype = {
-	jquery: core_version,
-	constructor: jQuery,
-    init: function( selector, context, rootjQuery ){
-      
-    	//some code  
-    }
-}
-```
-所以`jQuery.fn`和`jQuery`的原型都是一个对象，在这个对象中也定义了一些属性和方法，我们可以直接使用，比如`$().length`或者`$().map()`；
 
