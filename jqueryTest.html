@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jqueryTest</title>
+	<script type="text/javascript" src="jquery-2.0.3.js"></script>
+	<script>
+	$(function(){
+	console.log(jQuery([]).pushStack( document.getElementsByTagName( "div" ) ));
+
+	})
+	</script>
+</head>
+<body>
+	<div id="grandparent">I am grandparent
+		<div id="parent">I am parent
+			<div id="child">I am child</div>
+		</div>
+	</div>
+</body>
+</html>
